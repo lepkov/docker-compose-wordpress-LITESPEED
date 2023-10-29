@@ -6,6 +6,7 @@ Contains:
 * LiteSpeed Webserver + LiteSpeed PHP (LSPHP) 7.4 Container
 * MariaDB 10.6 Container
 * phpMyAdmin Container
+![image](https://github.com/lepkov/docker-compose-wordpress-LITESPEED/assets/23506790/d3f0aa87-6e1d-4e13-9a70-4e4a73ec0581)
 
 ## Manage infra
 `docker-compose up -d`
