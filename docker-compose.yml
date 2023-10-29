@@ -17,6 +17,7 @@ services:
         MYSQL_USER: user
         MYSQL_CHARSET: utf8mb4
         MYSQL_COLLATION: utf8mb4_unicode_ci
+        TZ: Europe/Moscow
     command: --max_allowed_packet=256M
     volumes:
         - ./app/mysql:/var/lib/mysql # persistent databases on rebuild/restart

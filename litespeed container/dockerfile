@@ -1,0 +1,26 @@
+# https://hub.docker.com/r/litespeedtech/openlitespeed
+FROM litespeedtech/openlitespeed:1.7.18-lsphp74
+# https://budaev.org/litespeed-cache-wordpress-plugin-tuning/
+
+# Install OS packages
+RUN apt-get update -y && \
+    apt-get install htop nano sudo net-tools -y && \
+    apt-get install lsphp74-memcached && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set admin/my_password for webadmin (localhost:7080)
+RUN echo 'admin:$1$Nxxay3q5$gGnsqt0oJAfzQGcKC8aos/' > /usr/local/lsws/admin/conf/htpasswd
+
+# Get trial license key
+RUN wget -P /usr/local/lsws/conf -q http://license.litespeedtech.com/reseller/trial.key
+RUN chmod 755 /usr/local/lsws/conf/trial.key
+
+# Rename log files
+RUN sed -i 's/errorlog logs\/error.log/errorlog logs\/litespeed-error.log/g' /usr/local/lsws/conf/httpd_config.conf && \
+    sed -i 's/accessLog logs\/access.log/accessLog logs\/litespeed-access.log/g' /usr/local/lsws/conf/httpd_config.conf && \
+    sed -i 's/errorlog $VH_ROOT\/logs\/error.log/errorlog $VH_ROOT\/logs\/litespeed-localhost-error.log/g' /usr/local/lsws/conf/vhosts/Example/vhconf.conf && \
+    sed -i 's/logLevel DEBUG/logLevel WARNING/g' /usr/local/lsws/conf/vhosts/Example/vhconf.conf && \
+    sed -i 's/accessLog $VH_ROOT\/logs\/access.log/accessLog $VH_ROOT\/logs\/litespeed-localhost-access.log/g' /usr/local/lsws/conf/vhosts/Example/vhconf.conf && \
+# Setting PHP_LSAPI_CHILDREN to 100
+    sed -i 's/PHP_LSAPI_CHILDREN=10/PHP_LSAPI_CHILDREN=100/g' /usr/local/lsws/conf/httpd_config.conf
