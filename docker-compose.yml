@@ -6,7 +6,7 @@ services:
     container_name: dev-wp-db-container
     build:
       context: ./db container
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     ports:
       - 3306:3306
     environment:
@@ -31,7 +31,7 @@ services:
     container_name: dev-wp-litespeed-container
     build:
       context: ./litespeed container
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     volumes:
        - ./app/public_html:/var/www/vhosts/localhost/html
        - ./app/logs:/usr/local/lsws/logs/
@@ -48,7 +48,7 @@ services:
     container_name: dev-wp-lsmcd-container
     build:
       context: ./lsmcd container
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
       shm_size: 128mb
     shm_size: 128mb # enough for LSMCD to start
     ports:
