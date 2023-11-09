@@ -20,9 +20,12 @@ Contains:
 * Upload the website's root dir into the `/app/public_html` folder
 * Make changes to the `wp-config.php` with the new DB credentials and add:
 ```
-define( 'WP_HOME', 'http://localhost' ); 
-define( 'WP_SITEURL', 'http://localhost' );
-define( 'FS_METHOD', 'direct' );
+define('DB_NAME', 'YOUR DB NAME');
+define('DB_USER', 'root');
+define('DB_PASSWORD', 'my_password');
+define('WP_HOME', 'http://localhost'); 
+define('WP_SITEURL', 'http://localhost');
+define('FS_METHOD', 'direct');
 ```
 * Make changes in `.htaccess` in paths if they exist
 * Open `localhost` in the browser to check your website
@@ -35,3 +38,6 @@ To connect to the LSMCD:
 No special credentials are needed.
 ## Logs
 All logs are in the `/app/logs` folder.
+
+Search and Replace sitename in the DB:
+`sed -i 's/original\.site/localhost/g' newlepko_lepkov_shop.sql`
