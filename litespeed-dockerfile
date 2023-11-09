@@ -24,3 +24,4 @@ RUN sed -i 's/errorlog logs\/error.log/errorlog logs\/litespeed-error.log/g' /us
     sed -i 's/accessLog $VH_ROOT\/logs\/access.log/accessLog $VH_ROOT\/logs\/litespeed-localhost-access.log/g' /usr/local/lsws/conf/vhosts/Example/vhconf.conf && \
 # Setting PHP_LSAPI_CHILDREN to 100
     sed -i 's/PHP_LSAPI_CHILDREN=10/PHP_LSAPI_CHILDREN=100/g' /usr/local/lsws/conf/httpd_config.conf
+    

@@ -1,31 +1,31 @@
 # https://hub.docker.com/_/mariadb
 FROM mariadb:10.6
 
+ENV MYSQL_ROOT_PASSWORD="my_password"
+ENV MYSQL_PASSWORD="my_password"
+ENV MYSQL_CHARSET="utf8mb4"
+ENV MYSQL_COLLATION="utf8mb4_unicode_ci"
+ENV TZ="Europe/Moscow"
+
 # Install OS packages
 RUN apt-get update -y && \
-    apt-get install htop mytop nano sudo -y && \
+    apt-get install htop nano sudo -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Update the MySQL configuration file
 RUN echo "[mysqld]" >> /etc/mysql/conf.d/docker.cnf && \
-    echo "character_set_server=utf8mb4" >> /etc/mysql/conf.d/docker.cnf && \
-    echo "collation-server=utf8mb4_unicode_ci" >> /etc/mysql/conf.d/docker.cnf && \
-# Turn on slow query catch
-    echo "slow_query_log = 1" >> /etc/mysql/conf.d/docker.cnf && \
-    echo "slow_query_log_file = /var/log/mysql/mariadb-slow.log" >> /etc/mysql/conf.d/docker.cnf && \
-    echo "long_query_time = 1" >> /etc/mysql/conf.d/docker.cnf && \
 # Tune MariaDB for the Wordpress (https://www.cloudservices.store/cp/index.php/knowledgebase/63/Tune-MySQL-or-mariadb-database-for-WooCommerce-and-WordPress.html)
     echo "innodb_buffer_pool_size=512M" >> /etc/mysql/conf.d/docker.cnf && \
 # SQL QUERY TO CHECK: SHOW VARIABLES LIKE '%innodb_buffer_pool_size%';
     echo "query_cache_limit=8M" >> /etc/mysql/conf.d/docker.cnf && \
     echo "query_cache_size=256M" >> /etc/mysql/conf.d/docker.cnf && \
-    echo "query_cache_type=1" >> /etc/mysql/conf.d/docker.cnf 
-
+    echo "query_cache_type=1" >> /etc/mysql/conf.d/docker.cnf
 # Set appropriate file permissions
-RUN chown -R mysql:mysql /docker-entrypoint-initdb.d
-
-# Start the MariaDB service
-CMD ["mysqld"]
+RUN chown -R mysql:mysql /docker-entrypoint-initdb.d && \
+    chown -R mysql:mysql /var/lib/mysql && \
+    chmod -R 0777 /var/lib/mysql && \
+    chmod -R 0777 /var/log/mysql && \
+    chown -R mysql:mysql /var/log/mysql
 
 # Command to catch current SQL queries: mytop u root -p my_password -d database_name
