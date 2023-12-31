@@ -44,6 +44,6 @@ To connect to the LSMCD:
 No special credentials are needed.
 ## Logs
 All logs are in the `/app/logs` folder.
-
+## Useful
 Search and Replace sitename in the DB:
-`sed -i 's/original\.site/localhost/g' newlepko_lepkov_shop.sql`
+`sed -i 's/original\.site/localhost/g' exported_db.sql`
