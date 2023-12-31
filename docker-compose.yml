@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 networks:
   wp_dev_network:
@@ -25,7 +25,7 @@ services:
     container_name: dev-wp-litespeed-container
     build:
       context: .
-      dockerfile: litespeed-dockerfile
+      dockerfile: litespeed81-dockerfile
     volumes:
        - ./app/public_html:/var/www/vhosts/localhost/html
        - ./app/logs:/usr/local/lsws/logs/
@@ -36,18 +36,19 @@ services:
     networks:
       - wp_dev_network
 
-  # litespeed_memcache:
-  #   container_name: dev-wp-lsmcd-container
-  #   build:
-  #     dockerfile: lsmcd_dockerfile
-  #     shm_size: 128mb
-  #   shm_size: 128mb # enough for LSMCD to start
-  #   ports:
-  #     - 11211:11211
-  #   restart: always
-  #   networks:
-  #     - wp_dev_network
-  
+  litespeed_memcache:
+    container_name: dev-wp-lsmcd-container
+    build:
+      context: .
+      dockerfile: lsmcd-dockerfile
+      shm_size: 128mb
+    shm_size: 128mb # enough for LSMCD to start
+    ports:
+      - 11211:11211
+    restart: always
+    networks:
+      - wp_dev_network
+
   phpmyadmin:
     # localhost:8081 root/MYSQL_ROOT_PASSWORD
     container_name: dev-wp-phpmyadmin-container

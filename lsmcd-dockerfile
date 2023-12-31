@@ -4,7 +4,7 @@ FROM ubuntu:jammy
 # Install OS packages
 RUN apt-get update -y && \
     apt-get install htop nano sudo -y && \
-    apt-get install git build-essential zlib1g-dev libexpat1-dev openssl libssl-dev libsasl2-dev libpcre3-dev -y && \
+    apt-get install git sasl2-bin build-essential zlib1g-dev libexpat1-dev openssl libssl-dev libsasl2-dev libpcre3-dev -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -24,10 +24,18 @@ RUN chmod -R 777 /usr/local/lsmcd
 # IMPORTANT IN WP-Admin SET litespeed_memcache instead of the localhost hostname
 RUN sed -i 's/Cached.UseSasl=false/Cached.UseSasl=true/g' /usr/local/lsmcd/conf/node.conf && \
 # Cached.Anonymous=true
-    sed -i 's/Cached.Anonymous=false/Cached.Anonymous=true/g' /usr/local/lsmcd/conf/node.conf && \
+#    sed -i 's/Cached.Anonymous=false/Cached.Anonymous=true/g' /usr/local/lsmcd/conf/node.conf && \
 # CACHED.ADDR=0.0.0.0:11211 to make it worknot just inside the container
     sed -i 's/CACHED.ADDR=127.0.0.1:11211/CACHED.ADDR=0.0.0.0:11211/g' /usr/local/lsmcd/conf/node.conf && \
+    sed -i 's/#Cached.SaslDB=\/etc\/sasllsmcd/Cached.SaslDB=\/etc\/sasllsmcd/' /usr/local/lsmcd/conf/node.conf && \
+    sed -i 's/Group=nobody/Group=nogroup/' /usr/local/lsmcd/conf/node.conf && \
     rm -rf /dev/shm/lsmcd
+
+# Setting SASL Access (user1/test)
+RUN echo test | saslpasswd2 -f /etc/sasllsmcd user1 #shit doesnt work
+RUN chown nobody:nogroup /etc/sasllsmcd && \
+    chmod 600 /etc/sasllsmcd
+
 
 EXPOSE 11211
 
