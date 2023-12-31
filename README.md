@@ -3,7 +3,7 @@
 ### Infra/Hosting for developing and troubleshooting a WordPress website inside of the LiteSpeed environment
 Contains: 
 * LiteSpeed Memcached Container
-* LiteSpeed Webserver + LiteSpeed PHP (LSPHP) 7.4 Container
+* LiteSpeed Webserver + LiteSpeed PHP (LSPHP) 7.4/8.1 Container
 * MariaDB 10.6 Container
 * phpMyAdmin Container
 ![image](https://github.com/lepkov/docker-compose-wordpress-LITESPEED/assets/23506790/d3f0aa87-6e1d-4e13-9a70-4e4a73ec0581)
@@ -13,7 +13,11 @@ Contains:
 
 `docker-compose down`
 
-## Upload a WordPress Website
+bash start.sh - cleans logs and runs `docker-compose up -d`
+bash backup_files.sh - runs `cp -r "$WORKDIR/public_html" "$WORKDIR/backup/public_html"` with checking
+bash clean.sh - runs `docker-compose down`, `rm -rf app/logs/* && rm -rf app/logs/.*`, `docker system prune --all --force`
+
+## Upload a WordPress Website into Docker Compose Infra
 * Open `localhost:8081` in the browser
 * Login to the phpMyAdmin with `root/my_password`
 * Upload your exported DB
