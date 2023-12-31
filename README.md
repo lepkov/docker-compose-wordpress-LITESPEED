@@ -14,7 +14,9 @@ Contains:
 `docker-compose down`
 
 bash start.sh - cleans logs and runs `docker-compose up -d`
+
 bash backup_files.sh - runs `cp -r "$WORKDIR/public_html" "$WORKDIR/backup/public_html"` with checking
+
 bash clean.sh - runs `docker-compose down`, `rm -rf app/logs/* && rm -rf app/logs/.*`, `docker system prune --all --force`
 
 ## Upload a WordPress Website into Docker Compose Infra
