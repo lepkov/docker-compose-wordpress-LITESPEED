@@ -25,7 +25,9 @@ services:
     container_name: dev-wp-litespeed-container
     build:
       context: .
-      dockerfile: litespeed81-dockerfile
+      dockerfile: litespeed82-dockerfile
+      # dockerfile: litespeed81-dockerfile
+      # dockerfile: litespeed74-dockerfile
     volumes:
        - ./app/public_html:/var/www/vhosts/localhost/html
        - ./app/logs:/usr/local/lsws/logs/
