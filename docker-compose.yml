@@ -25,7 +25,8 @@ services:
     container_name: dev-wp-litespeed-container
     build:
       context: .
-      dockerfile: litespeed82-dockerfile
+      dockerfile: litespeed83-dockerfile
+      # dockerfile: litespeed82-dockerfile
       # dockerfile: litespeed81-dockerfile
       # dockerfile: litespeed74-dockerfile
     volumes:

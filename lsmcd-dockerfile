@@ -36,7 +36,6 @@ RUN echo test | saslpasswd2 -f /etc/sasllsmcd user1 #shit doesnt work
 RUN chown nobody:nogroup /etc/sasllsmcd && \
     chmod 600 /etc/sasllsmcd
 
-
 EXPOSE 11211
 
 CMD /usr/local/lsmcd/bin/lsmcdctrl start && sleep infinity

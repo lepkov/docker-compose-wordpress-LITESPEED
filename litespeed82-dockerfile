@@ -1,6 +1,6 @@
 # https://hub.docker.com/r/litespeedtech/openlitespeed
 # https://github.com/litespeedtech/ols-docker-env
-FROM litespeedtech/openlitespeed:1.7.19-lsphp82
+FROM litespeedtech/openlitespeed:1.8.2-lsphp82
 # https://budaev.org/litespeed-cache-wordpress-plugin-tuning/
 
 # Install OS packages
