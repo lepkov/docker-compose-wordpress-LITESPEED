@@ -5,6 +5,9 @@ ARG OLS_VERSION="1.8.2"
 ARG PHP_VERSION="83"
 FROM litespeedtech/openlitespeed:${OLS_VERSION}-lsphp${PHP_VERSION}
 
+# Set the default shell to bash
+SHELL ["/bin/bash", "-c"]
+
 # Need to re-declare it after FROM directive to use it in the RUN commands
 ARG PHP_VERSION="83"
 ARG WEBADMIN_LOGIN="admin"

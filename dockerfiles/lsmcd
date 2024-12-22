@@ -2,6 +2,9 @@
 ARG LSMCD_UBUNTU_RELEASE="latest"
 FROM ubuntu:${LSMCD_UBUNTU_RELEASE}
 
+# Set the default shell to bash
+SHELL ["/bin/bash", "-c"]
+
 # Install OS packages and dependencies
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \

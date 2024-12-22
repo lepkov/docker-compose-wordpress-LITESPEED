@@ -7,13 +7,13 @@ FROM mariadb:${DB_VERSION}
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
         htop \
+        logrotate \
         nano \
         sudo && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Tune MariaDB for high load
 RUN echo "[mysqld]" >> /etc/mysql/conf.d/docker.cnf && \
-# Tune MariaDB for the Wordpress (https://www.cloudservices.store/cp/index.php/knowledgebase/63/Tune-MySQL-or-mariadb-database-for-WooCommerce-and-WordPress.html)
     echo "innodb_buffer_pool_size=1G" >> /etc/mysql/conf.d/docker.cnf && \
     echo "innodb_log_file_size=256M" >> /etc/mysql/conf.d/docker.cnf && \
     echo "innodb_flush_log_at_trx_commit=2" >> /etc/mysql/conf.d/docker.cnf && \
@@ -25,13 +25,40 @@ RUN echo "[mysqld]" >> /etc/mysql/conf.d/docker.cnf && \
     echo "query_cache_type=1" >> /etc/mysql/conf.d/docker.cnf
 # SQL QUERY TO CHECK ANY PARAMETER: SHOW VARIABLES LIKE '%innodb_buffer_pool_size%';
 
+# Secure MariaDB Configuration
+RUN echo "skip-networking" >> /etc/mysql/conf.d/docker.cnf && \
+    echo "skip-symbolic-links" >> /etc/mysql/conf.d/docker.cnf && \
+    echo "local-infile=0" >> /etc/mysql/conf.d/docker.cnf
+
 # Set File Permissions
-RUN chown -R mysql:mysql /docker-entrypoint-initdb.d /var/lib/mysql /var/log/mysql && \
-    chmod -R 0755 /var/lib/mysql /var/log/mysql
+RUN chown -R mysql:mysql /docker-entrypoint-initdb.d /var/lib/mysql /var/log/mysql /var/lib/logrotate && \
+    chmod -R 0750 /var/lib/mysql /var/log/mysql
+
+# Add logrotate configuration
+RUN echo '/var/log/mysql/* { \
+    compress \n\
+    create 640 mysql mysql \n\
+    createolddir 750 mysql mysql \n\
+    daily \n\
+    dateformat .%Y-%m-%d-%H-%M-%S \n\
+    delaycompress \n\
+    maxsize 100M \n\
+    minsize 1M \n\
+    missingok \n\
+    notifempty \n\
+    olddir archive/ \n\
+    postrotate \n\
+        /usr/bin/mysqladmin flush-logs \n\
+    endscript \n\
+    rotate 7 \n\
+    sharedscripts \n\
+}' > /etc/logrotate.d/mariadb
 
 # Expose the port
 EXPOSE ${MYSQL_PORT}
 
-CMD ["mariadbd"]
+# Switch to non-root user
+USER mysql
 
+CMD ["mariadbd"]
 # Command to catch current SQL queries: mytop u root -p my_password -d database_name

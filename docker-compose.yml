@@ -47,7 +47,7 @@ services:
           cpus: 1.00
           memory: 0.5G
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD-SHELL", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -177,8 +177,10 @@ networks:
     driver: bridge
 
 # TODO
+# - MariaDB default bash doesnt work
+# - Fix MariaDB healthcheck fails
 # - Change litespeed_webserver error log to NOTICE level
-# - Add non-root user for all the containers
+# - Add non-root user for all the containers (db+)
 # - Add multisite support for litespeed_webserver
 # - Add certbot container for SSL certificates
 # - ?Add a cron job for database backups
@@ -186,3 +188,4 @@ networks:
 # - ?Add a cron job for LSMCD cache cleanup
 # - ?Add monitoring tools like Prometheus and Grafana
 # - ?Switch to Redis for object caching
+# - Add GH Action to check the code quality
