@@ -1,0 +1,52 @@
+# Image repository: https://hub.docker.com/r/litespeedtech/openlitespeed
+# Documentation: https://github.com/litespeedtech/ols-docker-env
+# Guide: https://budaev.org/litespeed-cache-wordpress-plugin-tuning/
+ARG OLS_VERSION="1.8.2"
+ARG PHP_VERSION="83"
+FROM litespeedtech/openlitespeed:${OLS_VERSION}-lsphp${PHP_VERSION}
+
+# Need to re-declare it after FROM directive to use it in the RUN commands
+ARG PHP_VERSION="83"
+ARG WEBADMIN_LOGIN="admin"
+ARG WEBADMIN_PASSWORD="my_password"
+
+# Install OS packages and dependencies
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+        htop \
+        lsphp${PHP_VERSION}-memcached \
+        nano \
+        net-tools \
+        sudo && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set login/password for the WebAdmin
+RUN echo "admin:$(/usr/local/lsws/admin/fcgi-bin/admin_php -q /usr/local/lsws/admin/misc/htpasswd.php ${WEBADMIN_PASSWORD})" > /usr/local/lsws/admin/conf/htpasswd
+
+# Get trial license key
+RUN wget -q -P /usr/local/lsws/conf -q http://license.litespeedtech.com/reseller/trial.key && chmod 755 /usr/local/lsws/conf/trial.key
+
+# Performance optimization, log files renaming, setting PHP_LSAPI_CHILDREN to 100
+RUN sed -i \
+    -e 's/errorlog logs\/error.log/errorlog logs\/litespeed-error.log/g' \
+    -e 's/accessLog logs\/access.log/accessLog logs\/litespeed-access.log/g' \
+    -e 's/PHP_LSAPI_CHILDREN=10/PHP_LSAPI_CHILDREN=100/g' \
+    /usr/local/lsws/conf/httpd_config.conf && \
+    sed -i \
+    -e 's/errorlog $VH_ROOT\/logs\/error.log/errorlog $VH_ROOT\/logs\/litespeed-localhost-error.log/g' \
+    -e 's/logLevel DEBUG/logLevel WARNING/g' \
+    -e 's/accessLog $VH_ROOT\/logs\/access.log/accessLog $VH_ROOT\/logs\/litespeed-localhost-access.log/g' \
+    /usr/local/lsws/conf/vhosts/Example/vhconf.conf && \
+    sed -i \
+    -e 's/upload_max_filesize = 2M/upload_max_filesize = 192M/' \
+    -e 's/post_max_size = 8M/post_max_size = 192M/' \
+    -e 's/memory_limit = 128M/memory_limit = 1024M/' \
+    -e 's/max_execution_time = 30/max_execution_time = 300/' \
+    -e 's/max_input_time = 60/max_input_time = 300/' \
+    -e 's/;max_input_vars = 1000/max_input_vars = 10000/' \
+    /usr/local/lsws/lsphp${PHP_VERSION}/etc/php/*/litespeed/php.ini
+
+# Permissions
+RUN chown -R nobody:nogroup /var/www/vhosts/localhost/html /usr/local/lsws
+
+CMD ["/usr/local/lsws/bin/lswsctrl", "start"]

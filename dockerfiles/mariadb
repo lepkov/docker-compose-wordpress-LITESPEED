@@ -1,0 +1,37 @@
+# Image repository: https://hub.docker.com/_/mariadb
+# Default value, gets rewritten from the docker-compose.yml
+ARG DB_VERSION="10.6"
+FROM mariadb:${DB_VERSION}
+
+# Install OS packages and dependencies
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+        htop \
+        nano \
+        sudo && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Tune MariaDB for high load
+RUN echo "[mysqld]" >> /etc/mysql/conf.d/docker.cnf && \
+# Tune MariaDB for the Wordpress (https://www.cloudservices.store/cp/index.php/knowledgebase/63/Tune-MySQL-or-mariadb-database-for-WooCommerce-and-WordPress.html)
+    echo "innodb_buffer_pool_size=1G" >> /etc/mysql/conf.d/docker.cnf && \
+    echo "innodb_log_file_size=256M" >> /etc/mysql/conf.d/docker.cnf && \
+    echo "innodb_flush_log_at_trx_commit=2" >> /etc/mysql/conf.d/docker.cnf && \
+    echo "max_connections=500" >> /etc/mysql/conf.d/docker.cnf && \
+    echo "thread_cache_size=50" >> /etc/mysql/conf.d/docker.cnf && \
+    echo "table_open_cache=400" >> /etc/mysql/conf.d/docker.cnf && \
+    echo "query_cache_limit=8M" >> /etc/mysql/conf.d/docker.cnf && \
+    echo "query_cache_size=256M" >> /etc/mysql/conf.d/docker.cnf && \
+    echo "query_cache_type=1" >> /etc/mysql/conf.d/docker.cnf
+# SQL QUERY TO CHECK ANY PARAMETER: SHOW VARIABLES LIKE '%innodb_buffer_pool_size%';
+
+# Set File Permissions
+RUN chown -R mysql:mysql /docker-entrypoint-initdb.d /var/lib/mysql /var/log/mysql && \
+    chmod -R 0755 /var/lib/mysql /var/log/mysql
+
+# Expose the port
+EXPOSE ${MYSQL_PORT}
+
+CMD ["mariadbd"]
+
+# Command to catch current SQL queries: mytop u root -p my_password -d database_name

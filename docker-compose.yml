@@ -1,69 +1,188 @@
-version: '3.9'
-
-networks:
-  wp_dev_network:
-    driver: bridge
+volumes:
+  lsmcd_data:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: size=128m,uid=1000,gid=1000,mode=1777
+  db_data:
+    driver: local
 
 services:
+  # Database Service
   db:
-    container_name: dev-wp-db-container
+    container_name: db-container
     build:
-      context: .
-      dockerfile: mariadb-dockerfile
+      context: dockerfiles
+      dockerfile: mariadb
+      args:
+        DB_VERSION: ${DB_VERSION}
+        MYSQL_PORT: ${MYSQL_PORT}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+      TZ: Europe/Moscow
     ports:
-      - 3306:3306
-    command: --max_allowed_packet=256M
+      - ${MYSQL_PORT}:3306
+    command: --max_allowed_packet=512M
     volumes:
-      - ./app/mysql:/var/lib/mysql:rw
-      - ./app/logs:/var/log/mysql:rw
+      - db_data:/var/lib/mysql:rw,delegated
+      - ./app/logs:/var/log/mysql:rw,delegated
     restart: always
     networks:
       - wp_dev_network
+    logging:
+      driver: json-file
+      options:
+        max-size: 3m
+        max-file: 3
+    deploy:
+      resources:
+        limits:
+          cpus: 2.00
+          memory: 1G
+        reservations:
+          cpus: 1.00
+          memory: 0.5G
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
 
+  # LiteSpeed Web Server Service
   litespeed_webserver:
-    # Webadmin (localhost:7080) admin/my_password
-    container_name: dev-wp-litespeed-container
+    container_name: litespeed-container
     build:
-      context: .
-      dockerfile: litespeed83-dockerfile
-      # dockerfile: litespeed82-dockerfile
-      # dockerfile: litespeed81-dockerfile
-      # dockerfile: litespeed74-dockerfile
+      context: dockerfiles
+      dockerfile: litespeed
+      args:
+        OLS_VERSION: ${OLS_VERSION}
+        PHP_VERSION: ${PHP_VERSION}
+        WEBADMIN_LOGIN: ${WEBADMIN_LOGIN}
+        WEBADMIN_PASSWORD: ${WEBADMIN_PASSWORD}
+    ports:
+      - ${HTTP_PORT}:80
+      - ${WEBADMIN_PORT}:7080
     volumes:
-       - ./app/public_html:/var/www/vhosts/localhost/html
-       - ./app/logs:/usr/local/lsws/logs/
-    ports:
-      - 80:80
-      - 7080:7080
+      - ./app/public_html:/var/www/vhosts/localhost/html:rw,cached
+      - ./app/logs:/usr/local/lsws/logs/:rw,delegated
     restart: always
     networks:
       - wp_dev_network
+    logging:
+      driver: json-file
+      options:
+        max-size: 3m
+        max-file: 3
+    deploy:
+      resources:
+        limits:
+          cpus: 2.00
+          memory: 1G
+        reservations:
+          cpus: 1.00
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
 
+  # LiteSpeed Memcached Service
   litespeed_memcache:
-    container_name: dev-wp-lsmcd-container
+    container_name: lsmcd-container
     build:
-      context: .
-      dockerfile: lsmcd-dockerfile
-      shm_size: 128mb
-    shm_size: 128mb # enough for LSMCD to start
+      context: dockerfiles
+      dockerfile: lsmcd
+      args:
+        LSMCD_USER: ${LSMCD_USER}
+        LSMCD_PASSWORD: ${LSMCD_PASSWORD}
+        LSMCD_PORT: ${LSMCD_PORT}
     ports:
-      - 11211:11211
+      - ${LSMCD_PORT}:${LSMCD_PORT}
+    volumes:
+      - lsmcd_data:/dev/shm/lsmcd:rw,delegated
+    shm_size: 256mb
     restart: always
     networks:
       - wp_dev_network
+    logging:
+      driver: json-file
+      options:
+        max-size: 3m
+        max-file: 3
+    deploy:
+      resources:
+        limits:
+          cpus: 1.00
+          memory: 0.5G
+        reservations:
+          cpus: 0.25
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep lsmcdctrl || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
 
+  # phpMyAdmin Service (for development only)
   phpmyadmin:
-    # localhost:8081 root/MYSQL_ROOT_PASSWORD
-    container_name: dev-wp-phpmyadmin-container
-    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin-container
+    image: phpmyadmin/phpmyadmin:latest
     ports:
-      - 8081:80
+      - ${PMA_PORT}:80
     environment:
       PMA_HOST: db
       UPLOAD_LIMIT: 192M
       MAX_EXECUTION_TIME: 600
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: always
     networks:
       - wp_dev_network
+    logging:
+      driver: json-file
+      options:
+        max-size: 3m
+        max-file: 3
+    deploy:
+      resources:
+        limits:
+          cpus: 0.25
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  wp_dev_network:
+    driver: bridge
+
+# TODO
+# - Change litespeed_webserver error log to NOTICE level
+# - Add non-root user for all the containers
+# - Add multisite support for litespeed_webserver
+# - Add certbot container for SSL certificates
+# - ?Add a cron job for database backups
+# - ?Add a cron job for log rotation
+# - ?Add a cron job for LSMCD cache cleanup
+# - ?Add monitoring tools like Prometheus and Grafana
+# - ?Switch to Redis for object caching

@@ -1,0 +1,60 @@
+# Image repository: https://hub.docker.com/_/ubuntu/
+ARG LSMCD_UBUNTU_RELEASE="latest"
+FROM ubuntu:${LSMCD_UBUNTU_RELEASE}
+
+# Install OS packages and dependencies
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        git \
+        htop \
+        libexpat1-dev \
+        libpcre3-dev \
+        libsasl2-dev \
+        libssl-dev \
+        nano \
+        openssl \
+        sasl2-bin \
+        sudo \
+        zlib1g-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install LiteSpeed Memcached aka LSMCD (https://docs.litespeedtech.com/products/lsmcd/getting_started/)
+RUN git clone https://github.com/litespeedtech/lsmcd.git && \
+    cd lsmcd && \
+    bash fixtimestamp.sh && \
+    bash configure CFLAGS=" -O3" CXXFLAGS=" -O3" && \
+    make && \
+    cd dist && \
+    sed -i 's/chkconfig/update-rc.d/g' install.sh && \
+    bash install.sh && \
+    chmod -R 755 /usr/local/lsmcd
+
+# CACHED.USESASL=TRUE
+# IMPORTANT IN WP-Admin SET litespeed_memcache instead of the localhost hostname
+ARG LSMCD_PORT=11211
+RUN sed -i \
+    -e 's/Cached.UseSasl=false/Cached.UseSasl=true/g' \
+    -e 's/CACHED.ADDR=127.0.0.1:${LSMCD_PORT}/CACHED.ADDR=0.0.0.0:${LSMCD_PORT}/g' \
+    -e 's/#Cached.SaslDB=\/etc\/sasllsmcd/Cached.SaslDB=\/etc\/sasllsmcd/' \
+    -e 's/Group=nobody/Group=nogroup/' \
+    /usr/local/lsmcd/conf/node.conf
+
+# Cached.Anonymous=true
+#    sed -i 's/Cached.Anonymous=false/Cached.Anonymous=true/g' /usr/local/lsmcd/conf/node.conf && \
+# CACHED.ADDR=0.0.0.0:${LSMCD_PORT} to make it work outside of the container
+
+# Setting SASL Access
+ARG LSMCD_USER=admin
+ARG LSMCD_PASSWORD=my_password
+RUN echo "${LSMCD_PASSWORD}" | saslpasswd2 -p -c -f /etc/sasllsmcd "${LSMCD_USER}" && \
+    chown nobody:nogroup /etc/sasllsmcd && \
+    chmod 600 /etc/sasllsmcd
+
+# Expose the port
+EXPOSE ${LSMCD_PORT}
+
+CMD /usr/local/lsmcd/bin/lsmcdctrl start && sleep infinity
+# Service runs the command: /usr/local/lsmcd/bin/lsmcdctrl start, LOG: /tmp/lsmcd.log
+# Config /usr/local/lsmcd/conf/node.conf
