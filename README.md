@@ -49,6 +49,9 @@ To prepare the infrastructure:
 ```sh
 mv .env.example .env
 ```
+```sh
+git clone https://github.com/lepkov/docker-compose-wordpress-LITESPEED.git
+```
 
 To start the infrastructure:
 ```sh
