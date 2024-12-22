@@ -47,10 +47,11 @@ docker-compose-wordpress-LITESPEED/
 
 To prepare the infrastructure:
 ```sh
-mv .env.example .env
-```
-```sh
 git clone https://github.com/lepkov/docker-compose-wordpress-LITESPEED.git
+```
+
+```sh
+mv .env.example .env
 ```
 
 To start the infrastructure:
